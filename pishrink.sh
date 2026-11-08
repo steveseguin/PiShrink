@@ -176,6 +176,7 @@ EOM
 }
 
 should_skip_autoexpand=false
+mountdir=""
 debug=false
 repair=false
 parallel=false
@@ -347,9 +348,11 @@ resize2fs -p "$loopback" $minsize
 rc=$?
 if (( $rc )); then
   error $LINENO "resize2fs failed with rc $rc"
-  mount "$loopback" "$mountdir"
-  mv "$mountdir/etc/rc.local.bak" "$mountdir/etc/rc.local"
-  umount "$mountdir"
+  # Autoexpand may have been skipped, or remounting the image may fail.
+  if [[ -n "$mountdir" ]] && mount "$loopback" "$mountdir"; then
+    mv "$mountdir/etc/rc.local.bak" "$mountdir/etc/rc.local"
+    umount "$mountdir"
+  fi
   losetup -d "$loopback"
   exit 12
 fi
